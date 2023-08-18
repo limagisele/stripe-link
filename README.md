@@ -53,3 +53,4 @@ We would prefer not to share credentials from our Stripe account, please use a p
 If any of your API keys are written directly into files, or drawn from anywhere other than `code/server/.env`, then we will be unable to check your work and you will not be able to proceed through the challenge.  If the project works on your machine but not in tests, try putting keys from a different Stripe account into that `code/server/.env` file and see if it keeps behaving.
 
 _As always, you should **never** commit API secrets into source control. Make sure your Stripe account is (1) up to date with the latest API version, and (2) isn't operating an active business.  If necessary, you can easily [create new Stripe accounts](https://stripe.com/docs/multiple-accounts).  You do not need to activate the account, your integration will only be run in test mode._
+- _Milestone 1 Started On Fri Aug 18 00:07:53 UTC 2023_
