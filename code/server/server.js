@@ -31,6 +31,7 @@ app.use(cors({ origin: true }));
 
 // Provision
 const provision = require("./services/provision");
+const cache = require('./services/cache');
 
 // Routes
 app.get("/", (req, res) => {
@@ -97,7 +98,35 @@ const validateEmail = async (inputEmail) => {
  * After email address validation, create a new Payment Link for the fan, if one does not exists.
  */
 app.post("/create-payment-link", async (req, res) => {
-  // TODO: Integrate Stripe
+  const inputEmail = req.body.email
+  const inputName = req.body.name
+  if (await validateEmail(inputEmail)) {
+    const paymentLinksList = await stripe.paymentLinks.list()
+    const existingPaymentLink = paymentLinksList.data.find(
+      (pl) => ("fan_email" in pl.metadata && pl.metadata.fan_email === inputEmail) ||
+        ("fan_name" in pl.metadata && pl.metadata.fan_name === inputName)
+    )
+    if (existingPaymentLink) {
+      res.send({ status: 200, url: existingPaymentLink.url })
+    }
+    else {
+      const fan_name = inputName
+      const fan_email = inputEmail
+      const product = cache.get('product')
+      if (product) {
+        const paymentLink = await stripe.paymentLinks.create({ line_items: [{ price: product.price?.id, quantity: 1 }], metadata: { fan_name, fan_email } })
+        paymentLink
+          ? res.send({ status: 201, url: paymentLink.url })
+          : res.send({ status: 500, error: 'no able to create payment link' })
+      }
+      else {
+        res.send({status: 500, error: "network error"})
+      }
+    }
+  }
+  else {
+    res.send({status: 400, error: 'Invalid email'})
+  }
 });
 
 /**

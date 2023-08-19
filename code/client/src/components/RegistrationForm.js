@@ -11,7 +11,34 @@ const RegistrationForm = () => {
   const [existingSeller, setExistingSeller] = useState(null);
   const [hideInstruction, setHideInstruction] = useState(false);
   const handleClick = async () => {
-    // TODO: Integrate Stripe
+    setError(null)
+    if (sellerDisplayName === "" || sellerEmail === "") {
+      setError("Email Address and Display Name are required")
+    }
+    else {
+      setProcessing(true)
+      setExistingSeller(null)
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: sellerDisplayName, email: sellerEmail })
+      }
+      const response = await fetch('http://localhost:4242/create-payment-link', requestOptions)
+      const data = await response.json()
+      if (data.error === 'Invalid email') {
+        setError('Invalid email address entered')
+        setSucceeded(false)
+      } else if (data.url) {
+        data.status === 201 ? setExistingSeller(false) : setExistingSeller(true)
+        setPaymentLink(data.url)
+        setSucceeded(true)
+        setHideInstruction(true)
+      }
+      else {
+        setError("Something went wrong!")
+      }
+    }
+    setProcessing(false)
   };
 
   useEffect(() => {

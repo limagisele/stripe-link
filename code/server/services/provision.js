@@ -50,8 +50,8 @@ const provision = async () => {
  * @returns {Product}
  */
 const findProduct = async (url) => {
-  let product = null;
-  // TODO: Return Product
+  const productResponse = await stripe.products.search({ query: `url:\'${url}\'` })
+  const product = productResponse?.data?.length > 0 ? productResponse.data[0] : null
   return product;
 };
 /**
@@ -62,8 +62,9 @@ const findProduct = async (url) => {
  * @returns {Price} price
  */
 const findPrice = async (productId, lookupKey) => {
-  let price = null;
-  // TODO: Return Price
+  const priceResponse = await stripe.prices.search({ query: `product:\'${productId}\' AND lookup_key:\'${lookupKey}\'` })
+  const price =
+    priceResponse?.data?.length > 0 ? priceResponse.data[0] : null
   return price;
 };
 
@@ -76,8 +77,7 @@ const findPrice = async (productId, lookupKey) => {
  * @returns {Product} product
  */
 const createProduct = async (name, description, url) => {
-  let product = null;
-  // TODO: Return Product
+  const product = await stripe.products.create({name, description, url}) ?? null
   return product;
 };
 
@@ -92,8 +92,7 @@ const createProduct = async (name, description, url) => {
  * @returns {Price} price
  */
 const createPrice = async (product, unit_amount, nickname, lookup_key) => {
-  let price = null;
-  // TODO: Return Price
+  const price = await stripe.prices.create({product, unit_amount, nickname, lookup_key, currency: 'usd'})
   return price;
 };
 
