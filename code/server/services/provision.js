@@ -77,7 +77,7 @@ const findPrice = async (productId, lookupKey) => {
  * @returns {Product} product
  */
 const createProduct = async (name, description, url) => {
-  const product = await stripe.products.create({name, description, url}) ?? null
+  const product = await stripe.products.create({name, description, url})
   return product;
 };
 

@@ -100,28 +100,24 @@ const validateEmail = async (inputEmail) => {
 app.post("/create-payment-link", async (req, res) => {
   const inputEmail = req.body.email
   const inputName = req.body.name
+  let customer
+  let paymentLink
+
   if (await validateEmail(inputEmail)) {
-    const paymentLinksList = await stripe.paymentLinks.list()
-    const existingPaymentLink = paymentLinksList.data.find(
-      (pl) => ("fan_email" in pl.metadata && pl.metadata.fan_email === inputEmail) ||
-        ("fan_name" in pl.metadata && pl.metadata.fan_name === inputName)
-    )
-    if (existingPaymentLink) {
-      res.send({ status: 200, url: existingPaymentLink.url })
+    const customerResponse = await stripe.customers.search({ query: `name:\'${inputName}\'`})
+    if (customerResponse?.data?.length > 0) {
+      customer = customerResponse.data[0]
+      paymentLink = customer.metadata.payment_link_url
+      res.send({ status: 200, url: paymentLink })
     }
     else {
-      const fan_name = inputName
-      const fan_email = inputEmail
       const product = cache.get('product')
-      if (product) {
-        const paymentLink = await stripe.paymentLinks.create({ line_items: [{ price: product.price?.id, quantity: 1 }], metadata: { fan_name, fan_email } })
-        paymentLink
-          ? res.send({ status: 201, url: paymentLink.url })
-          : res.send({ status: 500, error: 'no able to create payment link' })
-      }
-      else {
-        res.send({status: 500, error: "network error"})
-      }
+      const paymentLink = await stripe.paymentLinks.create({
+        line_items: [{ price: product?.price?.id, quantity: 1 }],
+        metadata: { fan_name: inputName, fan_email: inputEmail },
+      })
+      customer = await stripe.customers.create({ name: inputName, email: inputEmail, metadata: { payment_link_url: paymentLink.url } })
+      res.send({ status: 201, url: paymentLink.url })
     }
   }
   else {
