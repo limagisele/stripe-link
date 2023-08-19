@@ -38,6 +38,7 @@ const provision = async () => {
     } else {
       product.price = price;
       cache.set('product', product);
+      console.log(cache.get('product'))
     }
   } catch (error) {
     throw new Error(`Provisioning error: ${error}`);

@@ -112,12 +112,18 @@ app.post("/create-payment-link", async (req, res) => {
     }
     else {
       const product = cache.get('product')
-      const paymentLink = await stripe.paymentLinks.create({
-        line_items: [{ price: product?.price?.id, quantity: 1 }],
-        metadata: { fan_name: inputName, fan_email: inputEmail },
-      })
-      customer = await stripe.customers.create({ name: inputName, email: inputEmail, metadata: { payment_link_url: paymentLink.url } })
-      res.send({ status: 201, url: paymentLink.url })
+      console.log(cache.get('product'))
+      if (product?.price) {
+        const paymentLink = await stripe.paymentLinks.create({
+          line_items: [{ price: product.price?.id, quantity: 1 }],
+          metadata: { fan_name: inputName, fan_email: inputEmail },
+        })
+        customer = await stripe.customers.create({ name: inputName, email: inputEmail, metadata: { payment_link_url: paymentLink.url } })
+        res.send({ status: 201, url: paymentLink.url })
+      }
+      else {
+        res.send({ status: 500, error: "network error" })
+      }
     }
   }
   else {
