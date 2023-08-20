@@ -72,7 +72,10 @@ app.get("/signup", (req, res) => {
  * @returns Price Id of the Product that was setup for challenge
  */
 const getPriceIdFromCache = async () => {
-  // TODO: Integrate Stripe
+  await provision()
+  const product = await cache.get('product')
+  console.log(`product in memory: ${product?.price?.id}`)
+  return product?.price?.id
 };
 
 /**
@@ -100,8 +103,8 @@ const validateEmail = async (inputEmail) => {
 app.post("/create-payment-link", async (req, res) => {
   const inputEmail = req.body.email
   const inputName = req.body.name
-  let customer
-  let paymentLink
+  let customer = null
+  let paymentLink = null
 
   if (await validateEmail(inputEmail)) {
     const customerResponse = await stripe.customers.search({ query: `name:\'${inputName}\'`})
@@ -111,18 +114,20 @@ app.post("/create-payment-link", async (req, res) => {
       res.send({ status: 200, url: paymentLink })
     }
     else {
-      const product = cache.get('product')
-      console.log(cache.get('product'))
-      if (product?.price) {
+      const priceId = await getPriceIdFromCache()
+      if (priceId) {
         const paymentLink = await stripe.paymentLinks.create({
-          line_items: [{ price: product.price?.id, quantity: 1 }],
+          line_items: [{ price: priceId, quantity: 1 }],
           metadata: { fan_name: inputName, fan_email: inputEmail },
         })
-        customer = await stripe.customers.create({ name: inputName, email: inputEmail, metadata: { payment_link_url: paymentLink.url } })
+        customer = await stripe.customers.create({
+          name: inputName,
+          email: inputEmail,
+          metadata: { payment_link_url: paymentLink.url },
+        })
         res.send({ status: 201, url: paymentLink.url })
-      }
-      else {
-        res.send({ status: 500, error: "network error" })
+      } else {
+        res.send({ status: 500, error: 'network error' })
       }
     }
   }

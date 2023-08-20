@@ -17,20 +17,28 @@ const provision = async () => {
 
     // Check if Product exists with correct shape in Stripe Account
     let product = await findProduct(T_SHIRT_URL);
-
+    // console.log(`found product:${product.id}`)
     if (product) {
       // Lookup Associate Challenge price
-      price = await findPrice(product.id, [T_SHIRT_LOOKUP_KEY]);
-
+      price = await findPrice(product.id, [T_SHIRT_LOOKUP_KEY])
+      console.log(
+        `found price:${price.lookup_key}`
+        )
       // Throw error if either Price doesn't exist
       if (!price) {
         price = await createPrice(product.id, T_SHIRT_COST, T_SHIRT_PRODUCT_NAME, T_SHIRT_LOOKUP_KEY);
+        console.log(
+          `new price for existing product:${price.lookup_key}`
+        )
       }
 
     } else {
       // Product does not exist in Stripe, create it and its Prices
       product = await createProduct(T_SHIRT_PRODUCT_NAME, T_SHIRT_PRODUCT_DESC, T_SHIRT_URL);
       price = await createPrice(product.id, T_SHIRT_COST, T_SHIRT_PRODUCT_NAME, T_SHIRT_LOOKUP_KEY);
+      console.log(
+        `new price for new product:${price.lookup_key}`
+      )
     }
 
     if (!product || !price) {
@@ -38,7 +46,7 @@ const provision = async () => {
     } else {
       product.price = price;
       cache.set('product', product);
-      console.log(cache.get('product'))
+      console.log(`setting up price in memory: ${price.lookup_key}`)
     }
   } catch (error) {
     throw new Error(`Provisioning error: ${error}`);
@@ -93,7 +101,14 @@ const createProduct = async (name, description, url) => {
  * @returns {Price} price
  */
 const createPrice = async (product, unit_amount, nickname, lookup_key) => {
-  const price = await stripe.prices.create({product, unit_amount, nickname, lookup_key, currency: 'usd'})
+  const price = await stripe.prices.create({
+    product,
+    unit_amount,
+    nickname,
+    lookup_key,
+    currency: 'usd',
+    transfer_lookup_key: true,
+  })
   return price;
 };
 
