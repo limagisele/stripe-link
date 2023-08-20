@@ -17,18 +17,18 @@ const provision = async () => {
 
     // Check if Product exists with correct shape in Stripe Account
     let product = await findProduct(T_SHIRT_URL);
-    // console.log(`found product:${product.id}`)
+    console.log(`found product:${product?.id}`)
     if (product) {
       // Lookup Associate Challenge price
       price = await findPrice(product.id, [T_SHIRT_LOOKUP_KEY])
       console.log(
-        `found price:${price.lookup_key}`
+        `found price:${price?.lookup_key}`
         )
       // Throw error if either Price doesn't exist
       if (!price) {
         price = await createPrice(product.id, T_SHIRT_COST, T_SHIRT_PRODUCT_NAME, T_SHIRT_LOOKUP_KEY);
         console.log(
-          `new price for existing product:${price.lookup_key}`
+          `new price for existing product:${price?.lookup_key}`
         )
       }
 
@@ -37,7 +37,7 @@ const provision = async () => {
       product = await createProduct(T_SHIRT_PRODUCT_NAME, T_SHIRT_PRODUCT_DESC, T_SHIRT_URL);
       price = await createPrice(product.id, T_SHIRT_COST, T_SHIRT_PRODUCT_NAME, T_SHIRT_LOOKUP_KEY);
       console.log(
-        `new price for new product:${price.lookup_key}`
+        `new price for new product:${price?.lookup_key}`
       )
     }
 
@@ -46,7 +46,7 @@ const provision = async () => {
     } else {
       product.price = price;
       cache.set('product', product);
-      console.log(`setting up price in memory: ${price.lookup_key}`)
+      console.log(`setting up price in memory: ${price?.lookup_key}`)
     }
   } catch (error) {
     throw new Error(`Provisioning error: ${error}`);
