@@ -141,8 +141,65 @@ app.post("/create-payment-link", async (req, res) => {
  * Get the Leaderboard data leveraging manual pagination of the Checkout sessions to total amount by fan email address
  * Returns Seller array with name, email, and total amount that is sorted desc by total amount
  */
+const getSessions = async () => {
+  const sessionsList = []
+  let sessions = { has_more: true }
+  while (sessions.has_more && sessionsList.length < 500) {
+    let lastElement = sessionsList.length
+      ? sessionsList[sessionsList.length - 1].id
+      : null
+    let sessionsOptions = lastElement
+      ? { limit: 100, starting_after: lastElement }
+      : { limit: 100 }
+    sessions = await stripe.checkout.sessions.list({ ...sessionsOptions })
+    if (sessions?.data?.length > 0) {
+      let sessionsResponse = sessions.data.filter(
+        (session) =>
+          'fan_email' in session.metadata && 'fan_name' in session.metadata
+      )
+      sessionsList.push(...sessionsResponse)
+    }
+  }
+  return sessionsList
+}
+
+const getSellersSummary = async (sessionsList) => {
+  const sellers = sessionsList.reduce((list, session) => {
+    const listIndex = list.findIndex(
+      (obj) => obj.email === session.metadata.fan_email
+    )
+    if (listIndex !== -1) {
+      list[listIndex].amount =
+        list[listIndex].amount + session.amount_total
+    } else {
+      list.push({
+        name: session.metadata.fan_name,
+        email: session.metadata.fan_email,
+        amount: session.amount_total,
+      })
+    }
+    return list
+  }, [])
+  return sellers
+}
+
+const sortSellers = async (sellersSummary) => {
+  return sellersSummary.sort((a, b) => b.amount - a.amount)
+}
+
 app.get("/leaders", async (req, res) => {
-  // TODO: Integrate Stripe
+  try {
+    const sessionsList = await getSessions()
+    console.log(`sessionsList: ${sessionsList}`)
+    const sellersSummary = await getSellersSummary(sessionsList)
+    console.log(`SellersSummary: ${sellersSummary}`)
+    const sortedSellers = await sortSellers(sellersSummary)
+    console.log(`sortedSellers: ${sortedSellers}`)
+    res.send({status: 200, sellers: sortedSellers})
+  } catch (error) {
+    console.log(error)
+    res.sendStatus(500)
+  }
 });
 
 

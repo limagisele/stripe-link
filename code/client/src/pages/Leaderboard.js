@@ -8,7 +8,14 @@ const Leaderboard = () => {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-  // TODO: Integrate Stripe
+    setProcessing(true)
+    const getSellersSummary = async () => {
+      const sellers = await getLeaders()
+      setSellers(sellers)
+      setProcessing(false)
+      console.log(`useEffect: ${sellers.length}`)
+    }
+    getSellersSummary()
   }, []);
 
   return (

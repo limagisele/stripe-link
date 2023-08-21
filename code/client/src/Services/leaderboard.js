@@ -4,5 +4,12 @@
  */
 export const getLeaders = async () => {
   // Milestone 2: Leaderboard
-  // TODO: Integrate Stripe
+  try {
+    const response = await fetch('http://localhost:4242/leaders')
+    const data = await response.json()
+    console.log(`getLeaders: ${data.sellers}`)
+    return data.sellers
+  } catch (error) {
+    console.log(error)
+  }
 };
